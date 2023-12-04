@@ -1,6 +1,6 @@
 # RTMP
 
-This project is a pure Elixir implementation for a RTMP server.
+This project is a pure Elixir implementation for a RTMP server based on `gen_tcp`.
 
 ## Installation
 
