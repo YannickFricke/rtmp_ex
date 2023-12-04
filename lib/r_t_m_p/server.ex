@@ -134,6 +134,8 @@ defmodule RTMP.Server do
   defp accept_client, do: send(self(), {:client, :accept})
 
   defp start_client_task(client_socket, client_ip, client_port) do
+    client_ip_string = RTMP.ip_to_string(client_ip)
+
     case ConnectionSupervisor.start_client_task(client_socket, client_ip, client_port) do
       {:ok, pid} ->
         _pid_reference = Process.monitor(pid)
