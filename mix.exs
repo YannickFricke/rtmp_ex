@@ -21,7 +21,11 @@ defmodule RTMP.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:styler, "~> 0.10", only: [:dev, :test], runtime: false}
+      # An opinionated code formatter by Adobe
+      {:styler, "~> 0.10", only: [:dev, :test], runtime: false},
+
+      # For generation the documentation
+      {:ex_doc, "~> 0.27", only: :dev, runtime: false}
     ]
   end
 end
