@@ -22,11 +22,12 @@ defmodule RTMP.Server do
 
   require Logger
 
-  @type state() :: %{
-          port: :inet.port_number(),
-          server_socket: RTMP.socket(),
-          client_handler: module()
-        }
+  # The internal state of the RTMP server
+  @typep state() :: %{
+           port: :inet.port_number(),
+           server_socket: RTMP.socket(),
+           client_handler: module()
+         }
 
   @name __MODULE__
 
