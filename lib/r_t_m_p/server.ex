@@ -125,8 +125,31 @@ defmodule RTMP.Server do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
-    Logger.debug("Proces #{inspect(pid)} went down")
+  def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
+    case Registry.lookup(RTMP.ClientMetaRegistry, ref) do
+      [] ->
+        Logger.warning(
+          "[RTMP] Could not find ref for pid #{inspect(pid)} - most likely the socket remains open until the program stops"
+        )
+
+      [
+        {_process,
+         %{
+           socket: client_socket,
+           ip: client_ip,
+           port: client_port
+         }}
+      ] ->
+        ip_address_string = RTMP.ip_to_string(client_ip)
+
+        Logger.debug(
+          "[RTMP] Closing connection to #{ip_address_string}:#{client_port} since the corresponding ClientConnection went down"
+        )
+
+        :gen_tcp.close(client_socket)
+
+        Registry.unregister(RTMP.ClientMetaRegistry, ref)
+    end
 
     {:noreply, state}
   end
@@ -139,10 +162,22 @@ defmodule RTMP.Server do
 
     case ConnectionSupervisor.start_client_task(client_socket, client_ip, client_port) do
       {:ok, pid} ->
-        _pid_reference = Process.monitor(pid)
+        pid_reference = Process.monitor(pid)
+
+        Registry.register(RTMP.ClientMetaRegistry, pid_reference, %{
+          socket: client_socket,
+          ip: client_ip,
+          port: client_port
+        })
 
       {:ok, pid, _info} ->
-        _pid_reference = Process.monitor(pid)
+        pid_reference = Process.monitor(pid)
+
+        Registry.register(RTMP.ClientMetaRegistry, pid_reference, %{
+          socket: client_socket,
+          ip: client_ip,
+          port: client_port
+        })
 
       :ignore ->
         :gen_tcp.close(client_socket)

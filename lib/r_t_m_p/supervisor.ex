@@ -14,6 +14,7 @@ defmodule RTMP.Supervisor do
   @impl true
   def init(_init_arg) do
     children = [
+      {Registry, name: RTMP.ClientMetaRegistry, keys: :unique},
       ConnectionSupervisor
     ]
 
