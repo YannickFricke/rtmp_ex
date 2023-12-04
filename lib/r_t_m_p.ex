@@ -20,4 +20,17 @@ defmodule RTMP do
   """
   @spec default_port() :: 1935
   def default_port, do: 1935
+
+  @doc """
+  Returns the default timeout for network operations.
+
+  ## Examples
+
+  ```elixir
+  iex> RTMP.default_timeout()
+  5000
+  ```
+  """
+  @spec default_timeout() :: non_neg_integer()
+  def default_timeout, do: :timer.seconds(5)
 end
