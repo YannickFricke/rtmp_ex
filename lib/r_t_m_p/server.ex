@@ -6,14 +6,14 @@ defmodule RTMP.Server do
 
   It accepts the following options:
 
-  | Name           | Required | Description                                                                                                          |
-  | :------------- | :------- | :------------------------------------------------------------------------------------------------------------------- |
-  | client_handler | Yes      | The module which provides callbacks for the lifecycle of a RTMP connection                                           |
-  | name           | No       | The name of the GenServer (defaults to `RTMP.Server` for a single instance)                                          |
-  | ip             | No       | The IP address to which the TCP listener should bind to                                                              |
-  | port           | No       | The port on which the TCP listener should use                                                                        |
-  | send_timeout   | No       | The default send timeout before a connection is considered as timeouted. Defaults to `RTMP.default_timeout/0`        |
-  | accept_timeout | No       | The amount of time to wait until a new socket connects. A low value enables the RTMP server to process more messages |
+  | Name           | Required | Description                                                                                                                                                 |
+  | :------------- | :------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | client_handler | Yes      | The module which provides callbacks for the lifecycle of a RTMP connection                                                                                  |
+  | name           | No       | The name of the GenServer (defaults to `RTMP.Server` for a single instance)                                                                                 |
+  | ip             | No       | The IP address to which the TCP listener should bind to                                                                                                     |
+  | port           | No       | The port on which the TCP listener should use                                                                                                               |
+  | send_timeout   | No       | The default send timeout before a connection is considered as timeouted. Defaults to `RTMP.default_timeout/0`.                                              |
+  | accept_timeout | No       | The amount of time to wait until a new socket connects. A low value enables the RTMP server to process more messages. Defaults to `RTMP.default_timeout/0`. |
   """
   @moduledoc since: "0.0.0"
 
