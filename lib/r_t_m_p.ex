@@ -46,7 +46,7 @@ defmodule RTMP do
   "127.0.0.1"
   ```
 
-  Stringifying an IPv8 address
+  Stringifying an IPv6 address
 
   ```elixir
   iex> RTMP.ip_to_string({0, 0, 0, 0, 0, 0, 0, 1})
