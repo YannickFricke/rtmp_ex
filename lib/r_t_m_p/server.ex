@@ -86,7 +86,7 @@ defmodule RTMP.Server do
                     start_client_task(accepted_client_socket, client_ip, client_port)
 
                   {:disconnect, reason} ->
-                    Logger.debug("Disconnecting client #{client_ip_string}:#{client_port}: #{inspect(reason)}")
+                    Logger.debug("[RTMP] Disconnecting client #{client_ip_string}:#{client_port}: #{inspect(reason)}")
 
                     :gen_tcp.close(accepted_client_socket)
                 end
@@ -95,7 +95,7 @@ defmodule RTMP.Server do
               end
 
             value ->
-              Logger.warning("Could not get remote IP + port: #{inspect(value)}")
+              Logger.warning("[RTMP] Could not get remote IP + port: #{inspect(value)}")
 
               :gen_tcp.close(accepted_client_socket)
           end
@@ -184,7 +184,7 @@ defmodule RTMP.Server do
 
       {:error, reason} ->
         Logger.warning(
-          "Could not start ClientConnection for client #{client_ip_string}:#{client_port}: #{inspect(reason)}"
+          "[RTMP] Could not start ClientConnection for client #{client_ip_string}:#{client_port}: #{inspect(reason)}"
         )
 
         :gen_tcp.close(client_socket)
