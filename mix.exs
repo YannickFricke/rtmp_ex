@@ -24,7 +24,7 @@ defmodule RTMP.MixProject do
       # An opinionated code formatter by Adobe
       {:styler, "~> 0.10", only: [:dev, :test], runtime: false},
 
-      # For generation the documentation
+      # For generating the documentation
       {:ex_doc, "~> 0.27", only: :dev, runtime: false}
     ]
   end
