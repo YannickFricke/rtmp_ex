@@ -18,7 +18,7 @@ defmodule RTMP do
   1935
   ```
   """
-  @spec default_port() :: 1935
+  @spec default_port() :: :inet.port_number()
   def default_port, do: 1935
 
   @doc """
