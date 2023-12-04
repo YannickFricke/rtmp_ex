@@ -6,13 +6,14 @@ defmodule RTMP.Server do
 
   It accepts the following options:
 
-  | Name           | Required | Description                                                                                                   |
-  | :------------- | :------- | :------------------------------------------------------------------------------------------------------------ |
-  | client_handler | Yes      | The module which provides callbacks for the lifecycle of a RTMP connection                                    |
-  | name           | No       | The name of the GenServer (defaults to `RTMP.Server` for a single instance)                                   |
-  | ip             | No       | The IP address to which the TCP listener should bind to                                                       |
-  | port           | No       | The port on which the TCP listener should use                                                                 |
-  | send_timeout   | No       | The default send timeout before a connection is considered as timeouted. Defaults to `RTMP.default_timeout/0` |
+  | Name           | Required | Description                                                                                                          |
+  | :------------- | :------- | :------------------------------------------------------------------------------------------------------------------- |
+  | client_handler | Yes      | The module which provides callbacks for the lifecycle of a RTMP connection                                           |
+  | name           | No       | The name of the GenServer (defaults to `RTMP.Server` for a single instance)                                          |
+  | ip             | No       | The IP address to which the TCP listener should bind to                                                              |
+  | port           | No       | The port on which the TCP listener should use                                                                        |
+  | send_timeout   | No       | The default send timeout before a connection is considered as timeouted. Defaults to `RTMP.default_timeout/0`        |
+  | accept_timeout | No       | The amount of time to wait until a new socket connects. A low value enables the RTMP server to process more messages |
   """
   @moduledoc since: "0.0.0"
 
@@ -26,7 +27,8 @@ defmodule RTMP.Server do
   @typep state() :: %{
            port: :inet.port_number(),
            server_socket: RTMP.socket(),
-           client_handler: module()
+           client_handler: module(),
+           accept_timeout: pos_integer()
          }
 
   @name __MODULE__
@@ -44,6 +46,7 @@ defmodule RTMP.Server do
     ip = Keyword.get(options, :ip, {0, 0, 0, 0})
     port = Keyword.get(options, :port, RTMP.default_port())
     send_timeout = Keyword.get(options, :send_timeout, RTMP.default_timeout())
+    accept_timeout = Keyword.get(options, :accept_timeout, RTMP.default_timeout())
 
     client_handler =
       Keyword.get(options, :client_handler) ||
@@ -66,15 +69,19 @@ defmodule RTMP.Server do
        %{
          port: port,
          server_socket: server_socket,
-         client_handler: client_handler
+         client_handler: client_handler,
+         accept_timeout: accept_timeout
        }}
     end
   end
 
   @impl GenServer
-  def handle_info({:client, :accept}, %{server_socket: server_socket, client_handler: client_handler} = state) do
+  def handle_info(
+        {:client, :accept},
+        %{server_socket: server_socket, client_handler: client_handler, accept_timeout: accept_timeout} = state
+      ) do
     should_accept_new_clients =
-      case :gen_tcp.accept(server_socket, RTMP.default_timeout()) do
+      case :gen_tcp.accept(server_socket, accept_timeout) do
         {:ok, accepted_client_socket} ->
           case :inet.peername(accepted_client_socket) do
             {:ok, {client_ip, client_port}} ->
