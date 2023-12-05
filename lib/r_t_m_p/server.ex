@@ -17,7 +17,7 @@ defmodule RTMP.Server do
   """
   @moduledoc since: "0.0.0"
 
-  use GenServer
+  use GenServer, restart: :transient
 
   alias RTMP.ClientConnection
   alias RTMP.ClientHandler
