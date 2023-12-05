@@ -26,7 +26,7 @@ defmodule RTMP.Server do
   # The internal state of the RTMP server
   @typep state() :: %{
            port: :inet.port_number(),
-           server_socket: RTMP.socket(),
+           server_socket: RTMP.Socket.t(),
            client_handler: module(),
            accept_timeout: pos_integer()
          }

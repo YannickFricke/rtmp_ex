@@ -6,7 +6,7 @@ defmodule RTMP.ClientConnection do
   @name __MODULE__
 
   @type state() :: %{
-          socket: RTMP.socket(),
+          socket: RTMP.Socket.t(),
           ip: :inet.ip_address(),
           port: :inet.port_number()
         }
