@@ -17,6 +17,26 @@ defmodule RTMP.ClientHandler do
   ```
   """
 
+  @doc """
+  Invokes the given function when it is exported by the given module.
+
+  If the function is not exported then the default result will be returned.
+  """
+  @spec invoke_if_exported(
+          module :: module(),
+          function_name :: atom(),
+          arity :: non_neg_integer(),
+          function_arguments :: list(term()),
+          default_result :: term()
+        ) :: term()
+  def invoke_if_exported(module, function_name, arity, function_arguments \\ [], default_result \\ :ok) do
+    if function_exported?(module, function_name, arity) do
+      apply(module, function_name, function_arguments)
+    else
+      default_result
+    end
+  end
+
   defmacro __using__(_opts) do
     quote do
       @behaviour RTMP.ClientHandler
