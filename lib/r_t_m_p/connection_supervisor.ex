@@ -18,16 +18,18 @@ defmodule RTMP.ConnectionSupervisor do
   @spec start_client_task(
           client_socket :: RTMP.Socket.t(),
           remote_ip_address :: :inet.ip_address(),
-          remote_port :: :inet.port_number()
+          remote_port :: :inet.port_number(),
+          client_handler :: module()
         ) :: DynamicSupervisor.on_start_child()
-  def start_client_task(client_socket, remote_ip_address, remote_port) do
+  def start_client_task(client_socket, remote_ip_address, remote_port, client_handler) do
     DynamicSupervisor.start_child(
       @name,
       {ClientConnection,
        [
          socket: client_socket,
          ip_address: remote_ip_address,
-         port: remote_port
+         port: remote_port,
+         client_handler: client_handler
        ]}
     )
   end

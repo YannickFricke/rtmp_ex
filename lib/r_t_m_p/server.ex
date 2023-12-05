@@ -19,6 +19,8 @@ defmodule RTMP.Server do
 
   use GenServer
 
+  alias RTMP.ClientConnection
+  alias RTMP.ClientHandler
   alias RTMP.ConnectionSupervisor
   alias RTMP.Socket
 
@@ -102,18 +104,14 @@ defmodule RTMP.Server do
             {:ok, {client_ip, client_port}} ->
               client_ip_string = RTMP.ip_to_string(client_ip)
 
-              if function_exported?(client_handler, :on_tcp_connect, 2) do
-                case apply(client_handler, :on_tcp_connect, [client_ip, client_port]) do
-                  :ok ->
-                    start_client_task(accepted_client_socket, client_ip, client_port)
+              case ClientHandler.invoke_if_exported(client_handler, :on_tcp_connect, 2, [client_ip, client_port]) do
+                :ok ->
+                  start_client_task(accepted_client_socket, client_ip, client_port, client_handler)
 
-                  {:disconnect, reason} ->
-                    Logger.debug("[RTMP] Disconnecting client #{client_ip_string}:#{client_port}: #{inspect(reason)}")
+                {:disconnect, reason} ->
+                  Logger.debug("[RTMP] Disconnecting client #{client_ip_string}:#{client_port}: #{inspect(reason)}")
 
-                    Socket.close(accepted_client_socket)
-                end
-              else
-                start_client_task(accepted_client_socket, client_ip, client_port)
+                  Socket.close(accepted_client_socket)
               end
 
             value ->
@@ -184,26 +182,30 @@ defmodule RTMP.Server do
       Socket.close(server_socket)
     end
 
-    Enum.each(Registry.keys(RTMP.ClientMetaRegistry, self()), &Process.exit(&1, :normal))
+    Enum.each(Registry.keys(RTMP.ClientMetaRegistry, self()), fn client_connection_pid ->
+      if Process.alive?(client_connection_pid) do
+        ClientConnection.shutdown(client_connection_pid)
+
+        Registry.unregister(RTMP.ClientMetaRegistry, client_connection_pid)
+      end
+    end)
   end
 
   @impl GenServer
-  def handle_cast(:shutdown, %{server_socket: server_socket} = state) do
-    Socket.close(server_socket)
-
-    Enum.each(Registry.keys(RTMP.ClientMetaRegistry, self()), &Process.exit(&1, :normal))
-
+  def handle_cast(:shutdown, state) do
     {:stop, :normal, state}
   end
 
   # Sends the current process the `{:client, :accept}` message which needs to be handled by `handle_info/2`
   defp accept_client, do: send(self(), {:client, :accept})
 
-  defp start_client_task(client_socket, client_ip, client_port) do
+  defp start_client_task(client_socket, client_ip, client_port, client_handler) do
     client_ip_string = RTMP.ip_to_string(client_ip)
 
-    case ConnectionSupervisor.start_client_task(client_socket, client_ip, client_port) do
+    case ConnectionSupervisor.start_client_task(client_socket, client_ip, client_port, client_handler) do
       {:ok, pid} ->
+        :gen_tcp.controlling_process(client_socket, pid)
+
         Process.monitor(pid)
 
         Registry.register(RTMP.ClientMetaRegistry, pid, %{
@@ -213,6 +215,8 @@ defmodule RTMP.Server do
         })
 
       {:ok, pid, _info} ->
+        :gen_tcp.controlling_process(client_socket, pid)
+
         Process.monitor(pid)
 
         Registry.register(RTMP.ClientMetaRegistry, pid, %{
