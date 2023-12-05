@@ -20,6 +20,7 @@ defmodule RTMP.Server do
   use GenServer
 
   alias RTMP.ConnectionSupervisor
+  alias RTMP.Socket
 
   require Logger
 
@@ -33,12 +34,24 @@ defmodule RTMP.Server do
 
   @name __MODULE__
 
+  # Client API
+
   @spec start_link(options :: keyword()) :: GenServer.on_start()
   def start_link(options) do
     genserver_registration_name = Keyword.get(options, :name, @name)
 
     GenServer.start_link(@name, options, name: genserver_registration_name)
   end
+
+  @doc """
+  Shuts the given RTMP server process by its name or pid asynchronously down.
+
+  It also disconnects all clients which were connected through the given RTMP server.
+  """
+  @spec shutdown(name_or_pid :: GenServer.name() | pid()) :: :ok
+  def shutdown(name_or_pid \\ RTMP.Server), do: GenServer.cast(name_or_pid, :shutdown)
+
+  # Server API
 
   @impl GenServer
   @spec init(options :: keyword()) :: {:ok, state()}
@@ -51,6 +64,8 @@ defmodule RTMP.Server do
     client_handler =
       Keyword.get(options, :client_handler) ||
         raise "The RTMP.Server requires a client handler module which is passed via client_handler"
+
+    Process.flag(:trap_exit, true)
 
     listen_options = [
       :binary,
@@ -95,7 +110,7 @@ defmodule RTMP.Server do
                   {:disconnect, reason} ->
                     Logger.debug("[RTMP] Disconnecting client #{client_ip_string}:#{client_port}: #{inspect(reason)}")
 
-                    :gen_tcp.close(accepted_client_socket)
+                    Socket.close(accepted_client_socket)
                 end
               else
                 start_client_task(accepted_client_socket, client_ip, client_port)
@@ -104,7 +119,7 @@ defmodule RTMP.Server do
             value ->
               Logger.warning("[RTMP] Could not get remote IP + port: #{inspect(value)}")
 
-              :gen_tcp.close(accepted_client_socket)
+              Socket.close(accepted_client_socket)
           end
 
           true
@@ -132,8 +147,8 @@ defmodule RTMP.Server do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
-    case Registry.lookup(RTMP.ClientMetaRegistry, ref) do
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, state) do
+    case Registry.lookup(RTMP.ClientMetaRegistry, pid) do
       [] ->
         Logger.warning(
           "[RTMP] Could not find ref for pid #{inspect(pid)} - most likely the socket remains open until the program stops"
@@ -153,12 +168,32 @@ defmodule RTMP.Server do
           "[RTMP] Closing connection to #{ip_address_string}:#{client_port} since the corresponding ClientConnection went down"
         )
 
-        :gen_tcp.close(client_socket)
+        Socket.close(client_socket)
 
-        Registry.unregister(RTMP.ClientMetaRegistry, ref)
+        Registry.unregister(RTMP.ClientMetaRegistry, pid)
     end
 
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def terminate(_reason, state) do
+    server_socket = Map.get(state, :server_socket)
+
+    if server_socket != nil do
+      Socket.close(server_socket)
+    end
+
+    Enum.each(Registry.keys(RTMP.ClientMetaRegistry, self()), &Process.exit(&1, :normal))
+  end
+
+  @impl GenServer
+  def handle_cast(:shutdown, %{server_socket: server_socket} = state) do
+    Socket.close(server_socket)
+
+    Enum.each(Registry.keys(RTMP.ClientMetaRegistry, self()), &Process.exit(&1, :normal))
+
+    {:stop, :normal, state}
   end
 
   # Sends the current process the `{:client, :accept}` message which needs to be handled by `handle_info/2`
@@ -169,32 +204,32 @@ defmodule RTMP.Server do
 
     case ConnectionSupervisor.start_client_task(client_socket, client_ip, client_port) do
       {:ok, pid} ->
-        pid_reference = Process.monitor(pid)
+        Process.monitor(pid)
 
-        Registry.register(RTMP.ClientMetaRegistry, pid_reference, %{
+        Registry.register(RTMP.ClientMetaRegistry, pid, %{
           socket: client_socket,
           ip: client_ip,
           port: client_port
         })
 
       {:ok, pid, _info} ->
-        pid_reference = Process.monitor(pid)
+        Process.monitor(pid)
 
-        Registry.register(RTMP.ClientMetaRegistry, pid_reference, %{
+        Registry.register(RTMP.ClientMetaRegistry, pid, %{
           socket: client_socket,
           ip: client_ip,
           port: client_port
         })
 
       :ignore ->
-        :gen_tcp.close(client_socket)
+        Socket.close(client_socket)
 
       {:error, reason} ->
         Logger.warning(
           "[RTMP] Could not start ClientConnection for client #{client_ip_string}:#{client_port}: #{inspect(reason)}"
         )
 
-        :gen_tcp.close(client_socket)
+        Socket.close(client_socket)
     end
   end
 end
