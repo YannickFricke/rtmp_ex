@@ -8,7 +8,7 @@ defmodule RTMP.Socket do
   """
   @type t() :: :gen_tcp.socket()
 
-  @type read_result(t) :: {:ok, t} | {:error, :closed | :timeout | :inet.posix()}
+  @type read_result(success_type) :: {:ok, success_type} | {:error, :closed | :timeout | :invalid_data | :inet.posix()}
 
   @type write_result() :: :ok | {:error, :closed | {:timeout, binary()} | :inet.posix()}
 
