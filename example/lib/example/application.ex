@@ -9,7 +9,7 @@ defmodule Example.Application do
   def start(_type, _args) do
     children = [
       RTMP.Supervisor,
-      {RTMP.Server, [client_handler: Example.ClientHandler]}
+      {RTMP.Server, [client_handler: Example.ClientHandler, accept_timeout: 500]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
