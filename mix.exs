@@ -7,7 +7,16 @@ defmodule RTMP.MixProject do
       version: "0.0.0",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      # ExDoc specific
+      name: "RTMP",
+      source_url: "https://github.com/YannickFricke/rtmp_ex",
+      homepage_url: "https://github.com/YannickFricke/rtmp_ex",
+      docs: [
+        # The main page in the docs
+        main: "RTMP"
+      ]
     ]
   end
 
@@ -25,7 +34,7 @@ defmodule RTMP.MixProject do
       {:styler, "~> 0.10", only: [:dev, :test], runtime: false},
 
       # For generating the documentation
-      {:ex_doc, "~> 0.27", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.30.9", only: :dev, runtime: false}
     ]
   end
 end
