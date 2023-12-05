@@ -1,5 +1,6 @@
 defmodule RTMP.Socket do
   @moduledoc """
+  This module is a higher-order module for gen_tcp related operations.
   """
 
   @typedoc """
@@ -7,6 +8,9 @@ defmodule RTMP.Socket do
   """
   @type t() :: :gen_tcp.socket()
 
+  @doc """
+  Reads the given amount of bytes from the socket within the given timeout.
+  """
   @spec read(
           socket :: t(),
           amount_of_bytes :: pos_integer(),
@@ -16,6 +20,9 @@ defmodule RTMP.Socket do
     :gen_tcp.recv(socket, amount_of_bytes, timeout)
   end
 
+  @doc """
+  Writes the given data to the socket.
+  """
   @spec write(
           socket :: t(),
           data :: binary()
