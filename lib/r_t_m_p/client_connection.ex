@@ -13,11 +13,14 @@ defmodule RTMP.ClientConnection do
 
   @name __MODULE__
 
+  @default_chunk_size_in_bytes 128
+
   @typep state() :: %{
            socket: RTMP.Socket.t(),
            ip: :inet.ip_address(),
            port: :inet.port_number(),
-           client_handler: module()
+           client_handler: module(),
+           receiving_chunk_size_in_bytes: pos_integer()
          }
 
   # Client API
@@ -44,7 +47,8 @@ defmodule RTMP.ClientConnection do
         socket: client_socket,
         ip: client_ip,
         port: client_port,
-        client_handler: client_handler
+        client_handler: client_handler,
+        receiving_chunk_size_in_bytes: @default_chunk_size_in_bytes
       },
       {:continue, {:handshake, :version}}
     }
