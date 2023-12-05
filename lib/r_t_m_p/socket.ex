@@ -30,4 +30,10 @@ defmodule RTMP.Socket do
   def write(socket, data) do
     :gen_tcp.send(socket, data)
   end
+
+  @doc """
+  Closes the given socket.
+  """
+  @spec close(socket :: t()) :: :ok
+  def close(socket), do: :gen_tcp.close(socket)
 end
