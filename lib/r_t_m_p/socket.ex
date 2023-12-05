@@ -8,6 +8,10 @@ defmodule RTMP.Socket do
   """
   @type t() :: :gen_tcp.socket()
 
+  @type read_result(t) :: {:ok, t} | {:error, :closed | :timeout | :inet.posix()}
+
+  @type write_result() :: :ok | {:error, :closed | {:timeout, binary()} | :inet.posix()}
+
   @doc """
   Reads the given amount of bytes from the socket within the given timeout.
   """
@@ -15,7 +19,7 @@ defmodule RTMP.Socket do
           socket :: t(),
           amount_of_bytes :: pos_integer(),
           timeout :: timeout()
-        ) :: {:ok, binary()} | {:error, :closed | :timeout | :inet.posix()}
+        ) :: read_result(binary())
   def read(socket, amount_of_bytes, timeout \\ RTMP.default_timeout()) do
     :gen_tcp.recv(socket, amount_of_bytes, timeout)
   end
@@ -25,8 +29,8 @@ defmodule RTMP.Socket do
   """
   @spec write(
           socket :: t(),
-          data :: binary()
-        ) :: :ok | {:error, :closed | {:timeout, binary()} | :inet.posix()}
+          data :: iodata()
+        ) :: write_result()
   def write(socket, data) do
     :gen_tcp.send(socket, data)
   end
